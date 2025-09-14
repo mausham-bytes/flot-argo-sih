@@ -1,0 +1,12 @@
+flask
+psycopg2-binary
+sqlalchemy
+geoalchemy2
+pandas
+xarray
+pymongo
+dotenv
+argopy
+google-generativeai
+chromadb
+scikit-learn
