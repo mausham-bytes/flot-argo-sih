@@ -47,27 +47,44 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate Nerida's response
-    setTimeout(() => {
-      const responses = [
-        "I'm analyzing the oceanographic data for that region. Based on recent ARGO profiles, I can see some interesting temperature variations.",
-        selectedFloat 
-          ? `Looking at float ${selectedFloat.id}, the temperature profile shows typical subtropical water mass characteristics. The salinity values suggest we're in a region influenced by Mediterranean outflow.`
-          : "I'd love to help you explore that! Could you select a specific ARGO float on the map, or would you like me to show you floats in a particular region?",
-        "That's a fascinating question about ocean dynamics! The ARGO data reveals some compelling patterns in the thermohaline circulation.",
-        "Based on the latest profiles, I'm seeing some anomalous temperature readings that might indicate a developing oceanic event. Let me pull up the comparative data.",
-      ];
+    try {
+      const response = await fetch('/chat/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: inputMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
 
       const neridaResponse: Message = {
         id: messages.length + 2,
         sender: 'nerida',
-        message: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date()
+        message: data.text || 'No response from server',
+        timestamp: new Date(),
       };
 
       setMessages([...messages, newMessage, neridaResponse]);
+    } catch (error: unknown) {
+      let errorMessageText = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessageText = error.message;
+      }
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        sender: 'nerida',
+        message: `Error: ${errorMessageText}`,
+        timestamp: new Date(),
+      };
+      setMessages([...messages, newMessage, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

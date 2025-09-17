@@ -8,6 +8,9 @@ def create_app():
     # Enable CORS (allow React frontend to connect)
     CORS(app, resources={r"/*": {"origins": "*"}})
 
+    # Enable CORS with all origins allowed
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
     # Register Blueprints
     app.register_blueprint(chat_bp, url_prefix="/chat")
 
