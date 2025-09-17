@@ -4,6 +4,9 @@ from routes.chat import chat_bp
 
 def create_app():
     app = Flask(__name__)
+    
+    # Enable CORS (allow React frontend to connect)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Enable CORS with all origins allowed
     CORS(app, resources={r"/*": {"origins": "*"}})
