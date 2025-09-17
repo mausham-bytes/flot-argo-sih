@@ -1,8 +1,12 @@
 from flask import Flask
+from flask_cors import CORS
 from routes.chat import chat_bp
 
 def create_app():
     app = Flask(__name__)
+    
+    # Enable CORS (allow React frontend to connect)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Register Blueprints
     app.register_blueprint(chat_bp, url_prefix="/chat")
