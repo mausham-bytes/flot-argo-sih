@@ -7,4 +7,10 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  server: {
+    proxy: {
+      // '/chat': 'http://localhost:5000',
+      '/chat': 'http://127.0.0.1:5000'
+    },
+  },
 });
