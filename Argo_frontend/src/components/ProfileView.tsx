@@ -70,7 +70,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
             <h3 className="font-semibold">
               {selectedFloat
                 ? `Profile: ${selectedFloat.id}`
-                : "Dummy Ocean Profile"}
+                : "Ocean Profile"}
             </h3>
           </div>
           <div className="flex items-center space-x-2">
