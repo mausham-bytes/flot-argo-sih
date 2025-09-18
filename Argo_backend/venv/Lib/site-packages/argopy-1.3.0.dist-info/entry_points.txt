@@ -1,0 +1,2 @@
+[xarray.backends]
+argo = argopy.xarray:ArgoEngine
