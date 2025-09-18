@@ -52,5 +52,3 @@ flot-argo-sih/
 └── .github/                        # (Optional) GitHub Actions for CI/CD
     └── workflows/                  # Automated workflows
 
-
-👉 Do you also want me to **write a `.gitignore`** for Python + React so you don’t push `venv/` and `node_modules/` to GitHub?
