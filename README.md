@@ -20,38 +20,37 @@ It is developed as part of the **Smart India Hackathon (SIH)**.
 ## 📂 Project Structure
 flot-argo-sih/
 │
-├── ARGO_FLOAT/                 # Main project folder
+├── ARGO_FLOAT/                     # Main project folder
 │   │
-│   ├── Argo_backend/           # Backend (FastAPI)
-│   │   ├── main.py             # Entry point for FastAPI app
-│   │   ├── requirements.txt    # Backend dependencies
-│   │   ├── app/                # App modules (recommended)
+│   ├── Argo_backend/               # Backend (FastAPI)
+│   │   ├── main.py                 # Entry point for FastAPI app
+│   │   ├── requirements.txt        # Backend dependencies
+│   │   ├── app/                    # App modules (recommended)
 │   │   │   ├── __init__.py
-│   │   │   ├── routes/         # API routes
-│   │   │   ├── models/         # Database models (if any)
-│   │   │   ├── services/       # Business logic
-│   │   │   └── utils/          # Helper functions
-│   │   └── tests/              # Backend unit tests
+│   │   │   ├── routes/             # API routes
+│   │   │   ├── models/             # Database models (if any)
+│   │   │   ├── services/           # Business logic
+│   │   │   └── utils/              # Helper functions
+│   │   └── tests/                  # Backend unit tests
 │   │
-│   ├── Argo_frontend/          # Frontend (React)
-│   │   ├── public/             # Static assets (favicon, index.html)
-│   │   ├── src/                # React source code
-│   │   │   ├── components/     # Reusable UI components
-│   │   │   ├── pages/          # Page-level components
-│   │   │   ├── services/       # API calls to backend
-│   │   │   ├── App.tsx         # Main React app
-│   │   │   └── index.tsx       # Entry point
-│   │   ├── package.json        # Frontend dependencies
-│   │   └── tsconfig.json       # TypeScript config (if TS is used)
+│   ├── Argo_frontend/              # Frontend (React)
+│   │   ├── public/                 # Static assets (favicon, index.html)
+│   │   ├── src/                    # React source code
+│   │   │   ├── components/         # Reusable UI components
+│   │   │   ├── pages/              # Page-level components
+│   │   │   ├── services/           # API calls to backend
+│   │   │   ├── App.tsx             # Main React app
+│   │   │   └── index.tsx           # Entry point
+│   │   ├── package.json            # Frontend dependencies
+│   │   └── tsconfig.json           # TypeScript config (if TS is used)
 │   │
-│   ├── venv/                   # Python virtual environment (ignored in Git)
-│   ├── README.md               # Project documentation
-│   └── .gitignore              # Ignore unnecessary files
+│   ├── venv/                       # Python virtual environment (ignored in Git)
+│   ├── README.md                   # Project documentation
+│   └── .gitignore                  # Ignore unnecessary files
 │
-├── LICENSE                     # License file
-└── .github/                    # (Optional) GitHub Actions for CI/CD
-    └── workflows/              # Automated workflows
+├── LICENSE                         # License file
+└── .github/                        # (Optional) GitHub Actions for CI/CD
+    └── workflows/                  # Automated workflows
 
---- 
 
 👉 Do you also want me to **write a `.gitignore`** for Python + React so you don’t push `venv/` and `node_modules/` to GitHub?
