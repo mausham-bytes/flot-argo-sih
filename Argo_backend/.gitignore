@@ -52,3 +52,10 @@ coverage/
 *.swo
 *.sublime-workspace
 *.sublime-project
+
+# Virtual environments
+# Ignore virtual environments
+venv/
+Argo_backend/venv/
+.envrc
+.venv/
