@@ -1,11 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Thermometer, Droplets, TrendingUp } from 'lucide-react';
+import { argoApi } from '../services/argoApi';
 
 export const SummaryCards: React.FC = () => {
+  const [stats, setStats] = useState({
+    activeFloats: 0,
+    avgTemperature: 0,
+    avgSalinity: 0,
+    dataPoints: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const floats = await argoApi.getFloats();
+      const activeFloats = floats.filter(f => f.status === 'active');
+      
+      const avgTemp = activeFloats.reduce((sum, f) => sum + (f.temperature || 0), 0) / activeFloats.length;
+      const avgSal = activeFloats.reduce((sum, f) => sum + (f.salinity || 0), 0) / activeFloats.length;
+      
+      setStats({
+        activeFloats: activeFloats.length,
+        avgTemperature: avgTemp,
+        avgSalinity: avgSal,
+        dataPoints: floats.length * 150 // Approximate profiles per float
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const summaryData = [
     {
       title: 'Active Floats',
-      value: '3,847',
+      value: loading ? '...' : stats.activeFloats.toLocaleString(),
       change: '+24',
       changeType: 'increase',
       icon: Activity,
@@ -15,7 +49,7 @@ export const SummaryCards: React.FC = () => {
     },
     {
       title: 'Avg Temperature',
-      value: '16.8°C',
+      value: loading ? '...' : `${stats.avgTemperature.toFixed(1)}°C`,
       change: '+0.3°C',
       changeType: 'increase',
       icon: Thermometer,
@@ -25,7 +59,7 @@ export const SummaryCards: React.FC = () => {
     },
     {
       title: 'Avg Salinity',
-      value: '35.9 PSU',
+      value: loading ? '...' : `${stats.avgSalinity.toFixed(1)} PSU`,
       change: '+0.1 PSU',
       changeType: 'increase',
       icon: Droplets,
@@ -35,7 +69,7 @@ export const SummaryCards: React.FC = () => {
     },
     {
       title: 'Data Points',
-      value: '2.4M',
+      value: loading ? '...' : `${(stats.dataPoints / 1000).toFixed(1)}K`,
       change: '+12.5K',
       changeType: 'increase',
       icon: TrendingUp,
@@ -50,7 +84,7 @@ export const SummaryCards: React.FC = () => {
       {summaryData.map((item, index) => (
         <div
           key={index}
-          className={`bg-slate-800/30 backdrop-blur-sm rounded-xl border ${item.borderColor} p-6 hover:scale-105 transition-all duration-300 hover:shadow-xl`}
+          className={`bg-slate-800/30 backdrop-blur-sm rounded-xl border ${item.borderColor} p-6 hover:scale-105 transition-all duration-300 hover:shadow-xl ${loading ? 'animate-pulse' : ''}`}
         >
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-lg ${item.bgColor}`}>

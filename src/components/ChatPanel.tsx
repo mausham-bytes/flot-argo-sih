@@ -1,25 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, Brain, Waves } from 'lucide-react';
+import { argoApi, ArgoFloat } from '../services/argoApi';
 
 interface Message {
   id: number;
   sender: 'user' | 'nerida';
   message: string;
   timestamp: Date;
+  data?: any;
 }
 
 interface ChatPanelProps {
   messages: Message[];
   setMessages: (messages: Message[]) => void;
-  selectedFloat: any;
+  selectedFloat: ArgoFloat | null;
   compact?: boolean;
+  onFloatSelect?: (float: ArgoFloat) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ 
   messages, 
   setMessages, 
   selectedFloat, 
-  compact = false 
+  compact = false,
+  onFloatSelect
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -48,28 +52,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     setIsTyping(true);
 
     try {
-      const response = await fetch('/chat/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: inputMessage }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await argoApi.chatQuery(inputMessage);
 
       const neridaResponse: Message = {
         id: messages.length + 2,
         sender: 'nerida',
-        message: data.text || 'No response from server',
+        message: data.text,
         timestamp: new Date(),
+        data: data.data
       };
 
       setMessages([...messages, newMessage, neridaResponse]);
+      
+      // If the response includes float data, you could trigger float selection
+      if (data.floats && data.floats.length > 0 && onFloatSelect) {
+        onFloatSelect(data.floats[0]);
+      }
     } catch (error: unknown) {
       let errorMessageText = 'Unknown error';
       if (error instanceof Error) {
@@ -78,7 +76,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       const errorMessage: Message = {
         id: messages.length + 2,
         sender: 'nerida',
-        message: `Error: ${errorMessageText}`,
+        message: `I'm having trouble connecting to the data services right now. Let me help you with what I know about ARGO floats! Try asking about ocean temperature, salinity, or float locations.`,
         timestamp: new Date(),
       };
       setMessages([...messages, newMessage, errorMessage]);
@@ -94,6 +92,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
+  const formatMessage = (message: Message) => {
+    if (message.data?.type === 'temperature_summary') {
+      return (
+        <div>
+          <p className="mb-2">{message.message}</p>
+          <div className="bg-slate-600/30 p-2 rounded text-xs">
+            <div className="flex justify-between">
+              <span>Surface Temp:</span>
+              <span className="text-red-400">16.8°C avg</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return <p className="text-sm">{message.message}</p>;
+  };
   return (
     <div className={`bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden ${
       compact ? 'h-80' : 'h-96'
@@ -108,6 +122,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             <h3 className="font-semibold">Chat with Nerida</h3>
             {compact && (
               <p className="text-xs text-slate-400">AI Oceanographer Assistant</p>
+            )}
+            {selectedFloat && (
+              <p className="text-xs text-cyan-400">Analyzing: {selectedFloat.id}</p>
             )}
           </div>
         </div>
@@ -132,7 +149,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     : 'bg-slate-700 text-white'
                 }`}
               >
-                <p className="text-sm">{message.message}</p>
+                {formatMessage(message)}
                 <p className="text-xs opacity-70 mt-1">
                   {message.timestamp.toLocaleTimeString([], { 
                     hour: '2-digit', 
@@ -170,7 +187,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask Nerida about ocean data..."
+            placeholder={selectedFloat ? `Ask about ${selectedFloat.id}...` : "Ask Nerida about ocean data..."}
             className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
           />
           <button
