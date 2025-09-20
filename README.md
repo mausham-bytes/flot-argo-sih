@@ -25,7 +25,9 @@ It is developed as part of the Smart India Hackathon (SIH).
 
 ✅ Testing Support – Backend unit tests for reliability and robustness.
 
+## 📂 Project Structure  
 
+```bash
 flot-argo-sih/
 │
 ├── ARGO_FLOAT/                # Main project folder
