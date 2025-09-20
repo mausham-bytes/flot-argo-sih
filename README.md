@@ -1,21 +1,29 @@
 
-# 🌊 Flot Argo-SIH
+🌊 Flot Argo-SIH
 
-**Flot Argo-SIH** is a full-stack web application designed to **analyze and visualize Argo float oceanographic data**.  
-The project integrates a **FastAPI backend** for data services with a **React frontend** for interactive visualization.  
-It is developed as part of the **Smart India Hackathon (SIH)**.
-
+Flot Argo-SIH is a full-stack web application designed to analyze and visualize Argo float oceanographic data.
+The project integrates a FastAPI backend for data services with a React frontend for interactive visualization.
+It is developed as part of the Smart India Hackathon (SIH).
 ---
 
-## ✨ Features
-- 📊 **Interactive Visualizations** – Explore ocean float datasets with graphs and charts.
-- ⚡ **FastAPI frontend** – High-performance REST API for handling float data.
-- 🎨 **React Frontend** – Modern, responsive interface for end users.
-- 🎨 **flask Backend**  - to sopport ...Frontend work ..and give user data.
-- 🔄 **Seamless Integration** – Frontend fetches data directly from backend APIs.
-- 🛠️ **Scalable Design** – Easy to extend with new APIs or UI components.
+✨ Features
+🌐 User Features
 
----
+📊 Interactive Visualizations – Explore ocean float datasets with graphs and charts.
+
+🌍 Oceanographic Insights – Easy access to global float datasets.
+
+🎨 Modern Interface – Responsive React UI for seamless user experience.
+
+⚙️ Technical Features
+
+⚡ FastAPI Backend – High-performance REST API for float data processing.
+
+🔄 Seamless Integration – Frontend fetches data directly from backend APIs.
+
+🛠️ Scalable Design – Modular architecture for adding new APIs or UI components.
+
+✅ Testing Support – Backend unit tests for reliability.
 
 ## 📂 Project Structure
 flot-argo-sih/
