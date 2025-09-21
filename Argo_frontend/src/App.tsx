@@ -137,7 +137,7 @@
 
 // export default App;
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Header } from './components/Header';
 import { MapView } from './components/MapView';
 import { ProfileView } from './components/ProfileView';
@@ -150,23 +150,39 @@ interface FloatData {
   [key: string]: unknown;
 }
 
+interface Message {
+  id: number;
+  sender: 'user' | 'nerida';
+  message: string;
+  timestamp: Date;
+}
+
 function App() {
   const [activeSection, setActiveSection] = useState<'overview' | 'map' | 'profiles' | 'chat'>('overview');
   const [selectedFloat, setSelectedFloat] = useState<FloatData | null>(null);
-  const [chatMessages, setChatMessages] = useState([
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [chatMessages, setChatMessages] = useState<Message[]>([
     {
       id: 1,
-      sender: 'nerida',
+      sender: 'nerida' as const,
       message:
         "Hello! I'm Nerida, your friendly AI oceanographer. I'm here to help you explore ARGO float data. What would you like to discover about our oceans today?",
       timestamp: new Date(),
     },
   ]);
 
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 text-white overflow-hidden relative">
+    <div className={`min-h-screen ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 text-white'
+        : 'bg-gradient-to-br from-blue-50 via-white to-sky-50 text-gray-900'
+    } overflow-hidden relative transition-colors duration-300`}>
       <FloatingElements />
-      <Header />
+      <Header theme={theme} onThemeToggle={toggleTheme} />
 
       <main className="container mx-auto px-4 py-6 space-y-6 relative z-10">
         {/* Navigation Tabs */}
@@ -182,8 +198,12 @@ function App() {
               onClick={() => setActiveSection(tab.id as typeof activeSection)}
               className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
                 activeSection === tab.id
-                  ? 'bg-cyan-500 text-slate-900 shadow-lg shadow-cyan-500/25'
-                  : 'bg-slate-800/50 hover:bg-slate-700/50 backdrop-blur-sm'
+                  ? theme === 'dark'
+                    ? 'bg-cyan-500 text-slate-900 shadow-lg shadow-cyan-500/25'
+                    : 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                  : theme === 'dark'
+                  ? 'bg-slate-800/50 hover:bg-slate-700/50 backdrop-blur-sm text-white'
+                  : 'bg-gray-200/70 hover:bg-gray-300/70 backdrop-blur-sm text-gray-900'
               }`}
             >
               {tab.label}
@@ -215,7 +235,6 @@ function App() {
                   setMessages={setChatMessages}
                   selectedFloat={selectedFloat}
                   compact={false}
-                  fixedInput={true} // keep input at bottom
                 />
               </div>
             </div>
@@ -237,14 +256,14 @@ function App() {
                       <ProfileView selectedFloat={selectedFloat} />
                     </div>
                     <div className="w-full max-w-[1200px] mx-auto">
-                      <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} />
+                      <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} theme={theme} />
                     </div>
                   </div>
                 </div>
               )}
 
               {activeSection === 'map' && (
-                <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} />
+                <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} theme={theme} />
               )}
 
               {activeSection === 'profiles' && (

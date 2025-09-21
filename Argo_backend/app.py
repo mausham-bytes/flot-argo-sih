@@ -1,18 +1,17 @@
 from flask import Flask
 from flask_cors import CORS
-from routes.chat import chat_bp
+from routes.chat import chat_bp  # MongoDB dependency mitigated by lazy loading
+from routes.location import location_bp
 
 def create_app():
     app = Flask(__name__)
-    
+
     # Enable CORS (allow React frontend to connect)
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    # Enable CORS with all origins allowed
-    CORS(app, resources={r"/*": {"origins": "*"}})
-
     # Register Blueprints
-    app.register_blueprint(chat_bp, url_prefix="/chat")
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(location_bp)
 
     return app
 

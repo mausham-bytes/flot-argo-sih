@@ -11,3 +11,7 @@ argopy
 google-generativeai
 chromadb
 scikit-learn
+requests
+fastapi
+uvicorn[standard]
+slowapi

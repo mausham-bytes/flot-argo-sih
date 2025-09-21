@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart3,
   TrendingUp,
   Thermometer,
   Droplets,
   Eye,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -23,40 +25,71 @@ interface ProfileViewProps {
   selectedFloat: any;
 }
 
+interface ProfileDataPoint {
+  depth: string;
+  value: number;
+  unit?: string;
+}
+
 export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
   const [profileType, setProfileType] = useState("temperature");
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dummy profile data (replace later with backend data)
-  const profileData = {
-    temperature: [
-      { depth: "0m", value: 18.4 },
-      { depth: "50m", value: 17.2 },
-      { depth: "100m", value: 15.8 },
-      { depth: "200m", value: 13.5 },
-      { depth: "500m", value: 9.2 },
-      { depth: "1000m", value: 4.8 },
-    ],
-    salinity: [
-      { depth: "0m", value: 36.1 },
-      { depth: "50m", value: 36.3 },
-      { depth: "100m", value: 36.0 },
-      { depth: "200m", value: 35.8 },
-      { depth: "500m", value: 35.2 },
-      { depth: "1000m", value: 34.9 },
-    ],
-    oxygen: [
-      { depth: "0m", value: 6.8 },
-      { depth: "50m", value: 6.4 },
-      { depth: "100m", value: 5.9 },
-      { depth: "200m", value: 5.1 },
-      { depth: "500m", value: 3.8 },
-      { depth: "1000m", value: 2.5 },
-    ],
-  };
+  useEffect(() => {
+    const fetchProfileData = async (parameter: string) => {
+      setLoading(true);
+      setError(null);
 
-  const currentData =
-    profileData[profileType as keyof typeof profileData] ||
-    profileData.temperature;
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/argo/profile/${parameter}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.status === 'success') {
+          setProfileData(data.profile);
+        } else {
+          throw new Error(data.message || 'Failed to load profile data');
+        }
+      } catch (err) {
+        console.error('Error fetching profile data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load profile data');
+        // Fallback to empty profile
+        setProfileData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData(profileType);
+  }, [profileType]);
+
+  if (loading && !profileData) {
+    return (
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden p-6">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mx-auto mb-2" />
+          <p className="text-slate-300">Loading profile data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !profileData) {
+    return (
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden p-6">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+          <p className="text-red-300 mb-2">Error loading profile data</p>
+          <p className="text-slate-400 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentData = profileData || [];
 
   const pieColors = ["#06b6d4", "#3b82f6", "#6366f1", "#a855f7", "#f97316", "#ef4444"];
 
@@ -155,7 +188,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
                 outerRadius={80}
                 label
               >
-                {currentData.map((_, index) => (
+                {currentData.map((_point: ProfileDataPoint, index: number) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={pieColors[index % pieColors.length]}
@@ -186,7 +219,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
                 </tr>
               </thead>
               <tbody>
-                {currentData.map((point, i) => (
+                {currentData.map((point: ProfileDataPoint, i: number) => (
                   <tr key={i} className="border-b border-slate-600/30">
                     <td className="px-4 py-2">{point.depth}</td>
                     <td className="px-4 py-2 font-mono">{point.value}</td>
