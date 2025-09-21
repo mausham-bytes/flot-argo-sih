@@ -1,165 +1,149 @@
-🏊‍♂️ Flot – Argo Float Ocean Data Visualization Platform
+# 🏊‍♂️ Flot - Argo Float Ocean Data Visualization Platform
 
-Full-stack platform to explore, visualize, and analyze Argo Float ocean data.
-Dive into ocean currents, temperature, salinity, and marine patterns with interactive maps, time series replays, and AI-powered insights.
+**Full-stack platform to visualize and analyze Argo Float ocean data. Explore ocean currents, temperature, salinity, and marine patterns with interactive maps and AI-powered insights.**
 
-✨ Tech Stack
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-Frontend
+## 🌊 Features
 
-⚛️ React + TypeScript
+- **Interactive Ocean Maps**: Visualize Argo float positions with animated markers
+- **Real-time Data Dashboard**: Monitor ocean temperature, salinity, and depth profiles
+- **AI-Powered Chat Assistant**: Query ocean data with natural language (Nerida AI)
+- **Time Series Analysis**: Replay float movement history with time sliders
+- **CSV Data Export**: Download filtered datasets for research
+- **Anomaly Detection**: Automated identification of unusual ocean patterns
+- **Multi-page Navigation**: Dashboard, Map View, Profiles, and Chat sections
 
-🎨 Tailwind CSS + shadcn/ui
+## 🏗️ Architecture
 
-🔗 React Query & Zustand – state management
-
-🧭 React Router – navigation
-
-🗺 Leaflet / Mapbox – geospatial mapping
-
-📊 Recharts – data visualization
-
-✅ Jest – testing
-
-Backend
-
-⚡ FastAPI + Uvicorn
-
-🐘 PostgreSQL + SQLAlchemy (PostGIS optional for spatial queries)
-
-🔒 JWT authentication
-
-📏 Pydantic – validation
-
-🧪 Pytest – testing
-
-Infrastructure
-
-🐳 Docker & Docker Compose – containerization
-
-⚙️ GitHub Actions – CI/CD
-
-🌊 Features
-
-🗺 Interactive Ocean Maps – Visualize Argo float positions with live, animated markers
-
-📊 Real-time Dashboard – Monitor ocean temperature, salinity, and depth profiles
-
-🤖 Nerida AI Chat Assistant – Query datasets using natural language
-
-⏳ Time Series Playback – Replay float movement history with timeline sliders
-
-📤 Data Export – Download filtered datasets in CSV format for research
-
-🚨 Anomaly Detection – Automated identification of unusual ocean patterns
-
-🧭 Multi-page Navigation – Dashboard, Map View, Profiles, and AI Chat
-
-🏗️ Architecture
+```
 flot-argo-sih/
-├── backend/               # FastAPI Application
+├── backend/                 # FastAPI Application
 │   ├── app/
-│   │   ├── main.py       # Entrypoint
-│   │   ├── models.py     # SQLAlchemy models
-│   │   ├── routes/       # API endpoints
-│   │   ├── services/     # Data processing & AI logic
-│   │   └── utils/        # Helper functions
-│   ├── requirements.txt
-│   └── tests/            # Pytest unit tests
-│
-├── frontend/              # React Application
+│   │   ├── main.py         # FastAPI app entry point
+│   │   ├── models.py       # SQLAlchemy DB models
+│   │   ├── routes/         # API endpoints (location, chat)
+│   │   ├── services/       # Business logic (data processing, LLM)
+│   │   └── utils/          # Helper functions
+│   ├── requirements.txt    # Python dependencies
+│   └── tests/              # Pytest unit tests
+├── frontend/               # React Application
 │   ├── src/
-│   │   ├── components/   # Reusable UI
-│   │   ├── pages/        # Dashboard, Map, Chat
-│   │   ├── hooks/        # Custom React hooks
-│   │   └── services/     # API client
-│   └── package.json
-│
-└── docs/                  # Documentation
-    ├── architecture.md   # System design
-    ├── api.md            # API reference
-    └── sih-project.md    # SIH-specific notes
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components (Dashboard, Map)
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── services/       # API service clients
+│   └── package.json        # Node dependencies
+└── docs/                   # Documentation
+    ├── architecture.md    # System design docs
+    ├── api.md            # API documentation
+    └── sih-project.md    # SIH-specific requirements
+```
 
-🚀 Quick Start
-🔧 Prerequisites
+## 🚀 Quick Start
 
-Docker
- & Docker Compose
+### Prerequisites
+- Docker & Docker Compose
+- Git
 
-Git
-
-⚡ Setup with Docker
+### Setup with Docker
+```bash
+# Clone the repository
 git clone https://github.com/yourorg/flot-argo-sih.git
 cd flot-argo-sih
+
+# Start the full stack
 docker-compose up --build
 
+# Access the application at http://localhost:3000
+```
 
-➡ Access at http://localhost:3000
+### Manual Setup (Development)
 
-🛠 Manual Development Setup
-
-Backend
-
+#### Backend Setup
+```bash
 cd backend/
 python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-
-Frontend
-
+#### Frontend Setup
+```bash
 cd frontend/
 npm install
 npm run dev
+```
 
-📤 API Documentation
+## 📤 API Documentation
 
-FastAPI auto-generates interactive docs:
+FastAPI provides automatic interactive API documentation:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-Swagger UI → http://localhost:8000/docs
+### Key Endpoints
+- `GET /floats` - Retrieve Argo float data with filtering options
+- `POST /chat/query` - AI-powered data queries
+- `GET /floats/{id}/trajectory` - Historical movement data for a float
 
-ReDoc → http://localhost:8000/redoc
+## 🖼️ Screenshots
 
-🔑 Key Endpoints
+### Dashboard Overview
+![Dashboard Screenshot](./docs/screenshots/dashboard.png)
 
-GET /floats – Retrieve float data with filters
+### Ocean Map with Floats
+![Map View Screenshot](./docs/screenshots/map.png)
 
-GET /floats/{id}/trajectory – Historical movement data
+### AI Chat Assistant
+![Chat Screenshot](./docs/screenshots/chat.png)
 
-POST /chat/query – AI-powered dataset queries
+## 🛠️ Tech Stack
 
-🖼️ Screenshots
+### Frontend
+- **React** - UI framework
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - Component library
+- **React Query** - Server state management
+- **Zustand** - Client state management
+- **React Router** - Navigation
+- **Leaflet/Mapbox** - Mapping
+- **Recharts** - Data visualization
+- **Jest** - Testing
 
-(Add real screenshots or mockups here)
+### Backend
+- **FastAPI** - Modern Python web framework
+- **SQLAlchemy** - ORM
+- **PostgreSQL** - Primary database
+- **Pydantic** - Data validation
+- **JWT** - Authentication
+- **pytest** - Testing
+- **uvicorn** - ASGI server
 
-📊 Dashboard Overview – Real-time metrics
+### Infrastructure
+- **Docker** - Containerization
+- **Docker Compose** - Local orchestration
+- **GitHub Actions** - CI/CD pipeline
 
-🗺 Map View – Floats on interactive ocean maps
+## 🤝 Contributing
 
-🤖 AI Chat Assistant – Conversational dataset queries
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-🤝 Contributing
+## 📄 License
 
-Fork the repository
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Create a branch → git checkout -b feature/amazing-feature
+## 🙏 Acknowledgments
 
-Commit → git commit -m 'Add some amazing feature'
-
-Push → git push origin feature/amazing-feature
-
-Open a Pull Request 🚀
-
-📄 License
-
-Licensed under the MIT License – see LICENSE
-.
-
-🙏 Acknowledgments
-
-🌍 Argo International Ocean Data Program – for datasets
-
-🏆 Smart India Hackathon (SIH) – for inspiration
-
-🌊 Marine researchers & oceanographers – for contributions to ocean science
+- Argo International Ocean Data Program for float data
+- SIH (Smart India Hackathon) for the initiative
+- Marine researchers and oceanographers worldwide
