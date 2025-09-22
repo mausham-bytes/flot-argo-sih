@@ -17,7 +17,7 @@ def get_db():
     global client, db, ocean_data_collection, ingestion_logs_collection, source_metadata_collection, queries_collection
     if client is None:
         try:
-            from config import Config
+            from ..config import Config
             client = MongoClient(Config.MONGO_URI)
             client.admin.command('ping')
             logger.info("Connected to MongoDB successfully.")

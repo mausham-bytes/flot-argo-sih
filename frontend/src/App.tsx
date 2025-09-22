@@ -161,6 +161,7 @@ function App() {
   const [activeSection, setActiveSection] = useState<'overview' | 'map' | 'profiles' | 'chat'>('overview');
   const [selectedFloat, setSelectedFloat] = useState<FloatData | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [lastQueryResult, setLastQueryResult] = useState<any>(null); // Store the last query response for visualization
   const [chatMessages, setChatMessages] = useState<Message[]>([
     {
       id: 1,
@@ -229,14 +230,31 @@ function App() {
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 max-h-60">
                 <ChatPanel
                   messages={chatMessages}
                   setMessages={setChatMessages}
-                  selectedFloat={selectedFloat}
                   compact={false}
+                  onQueryResult={setLastQueryResult}
                 />
               </div>
+
+              {/* Visualization Section */}
+              {lastQueryResult && (
+                <div className="flex-1 overflow-y-auto p-4 border-t">
+                  <h3 className="text-xl font-bold mb-4">Query Results</h3>
+
+                  {/* Temperature Profile */}
+                  <div className="mb-6">
+                    <ProfileView selectedFloat={selectedFloat} plotData={lastQueryResult.plot} />
+                  </div>
+
+                  {/* Salinity Map */}
+                  <div className="mb-6">
+                    <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} theme={theme} mapPoints={lastQueryResult?.map?.points} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -253,10 +271,10 @@ function App() {
 
                   <div className="flex flex-col gap-6">
                     <div className="w-full max-w-[1200px] mx-auto">
-                      <ProfileView selectedFloat={selectedFloat} />
+                      <ProfileView selectedFloat={selectedFloat} plotData={lastQueryResult?.plot} />
                     </div>
                     <div className="w-full max-w-[1200px] mx-auto">
-                      <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} theme={theme} />
+                      <MapView selectedFloat={selectedFloat} setSelectedFloat={setSelectedFloat} theme={theme} mapPoints={lastQueryResult?.map?.points} />
                     </div>
                   </div>
                 </div>
@@ -275,8 +293,8 @@ function App() {
               <ChatPanel
                 messages={chatMessages.slice(-3)}
                 setMessages={setChatMessages}
-                selectedFloat={selectedFloat}
                 compact={true}
+                onQueryResult={setLastQueryResult}
               />
             </div>
           </div>

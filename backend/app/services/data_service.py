@@ -8,9 +8,11 @@ import pandas as pd
 import requests
 import json
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Union
 import time
 import concurrent.futures
+
+from .data_loader import load_demo_data
 
 # ArgoVis API base URL for recent/current data
 ARGOVIS_API_URL = "https://argovis.colorado.edu"
@@ -21,6 +23,10 @@ class ArgoDataService:
         os.makedirs(self.cache_dir, exist_ok=True)
         self.session = requests.Session()
         self._available_years = []
+        self._cached_data = None  # Cache for loaded data
+        self.ARGOVIS_API_URL = ARGOVIS_API_URL  # Set the static API URL as instance attribute
+        print("Preloading ARGO demo data...")
+        self._cached_data = self._load_demo_data()
 
     def fetch_recent_data(self, start_date: str = None, end_date: str = None) -> List[Dict]:
         """
@@ -73,13 +79,18 @@ class ArgoDataService:
     def get_combined_data(self, start_date: str = None, end_date: str = None) -> List[Dict]:
         """
         Get combined historical and recent data. Now includes simulated data for a broader temporal range.
+        Uses caching to avoid reloading data repeatedly.
         """
+        # Check cache
+        if self._cached_data is not None:
+            return self._cached_data
+
         # Get available CSV data
         historical_data = self.fetch_historical_data()
         recent_data = self.fetch_recent_data(start_date, end_date)
 
-        # Fetch real ARGO data from GDAC for comprehensive coverage
-        extended_samples = self._fetch_real_argo_data()
+        # Fetch demo ARGO data for comprehensive coverage (faster for development)
+        extended_samples = self._fetch_real_argo_data()  # Renamed method but content is demo-only now
 
         # Combine and deduplicate by float ID
         combined = {}
@@ -94,9 +105,15 @@ class ArgoDataService:
 
         final_data = list(combined.values())
 
+        # Filter out items without valid time
+        final_data = [item for item in final_data if item.get('time') and isinstance(item['time'], str)]
+
         # Get available years for better user messaging
-        available_years = sorted(set(int(item['time'].split('-')[0]) for item in final_data))
-        year_range = f"{min(available_years)}-{max(available_years)}"
+        available_years = sorted(set(int(item['time'].split('-')[0]) for item in final_data if item['time'].split('-')[0].isdigit()))
+        if available_years:
+            year_range = f"{min(available_years)}-{max(available_years)}"
+        else:
+            year_range = "no-data"
 
         print(f"Combined dataset: {len(final_data)} unique float observations across {len(available_years)} years ({year_range})")
         print(f"Available years: {', '.join(map(str, available_years))}")
@@ -105,7 +122,10 @@ class ArgoDataService:
         self._available_years = available_years
 
         # Sort by time for consistency
-        final_data.sort(key=lambda x: x['time'], reverse=True)
+        final_data.sort(key=lambda x: x.get('time', ''), reverse=True)
+
+        # Cache the result
+        self._cached_data = final_data
 
         return final_data
 
@@ -127,174 +147,79 @@ class ArgoDataService:
         samples = []
 
         if years_to_fetch is None:
-            years_to_fetch = range(2015, datetime.now().year + 1)  # Default recent ARGO timeline with real data
+            years_to_fetch = range(2010, 2015)  # Limited range for faster demo loading
 
         for year in years_to_fetch:
-            try:
-                print(f"Fetching real ARGO data for {year} from GDAC...")
-                # Use ERDDAP for global data access with retry logic
-                fetcher = None
-                max_retries = 3
-                for attempt in range(max_retries):
-                    try:
-                        fetcher = argo_fetcher.region([-180, 180, -90, 90, year, year]).to_xarray()
-                        break
-                    except Exception as fetch_e:
-                        if attempt < max_retries - 1:
-                            print(f"Fetch attempt {attempt+1} failed for {year}: {fetch_e}. Retrying in 5 seconds...")
-                            time.sleep(5)
-                        else:
-                            print(f"Failed to fetch data for {year} after {max_retries} attempts: {fetch_e}")
-                            raise
+            # Use ARGOPy for all years to fetch live ARGO data
+            current_year = datetime.now().year
+            use_real_data = True  # Enable fetching real data for all years
 
-                # Check if data was retrieved
-                if fetcher is None or not hasattr(fetcher, 'coords') or 'N_PROF' not in fetcher.coords or len(fetcher.coords['N_PROF']) == 0:
-                    print(f"No data available for {year} from GDAC, using fallback")
+            if use_real_data:
+                print(f"Attempting to fetch real ARGO data for {year}...")
+                try:
+                    from argopy import DataFetcher as ArgoDataFetcher
+                    argo_fetcher = ArgoDataFetcher(region=[90, -90, 180, -180], mode='standard')
+                    # Add caching=1 if needed
+
+                    # Fetch for the specific year
+                    try:
+                        argo_data = argo_fetcher.float([year, year]).to_xarray()
+                        data_list = argo_data.to_dataframe().reset_index().to_dict(orient='records')
+                        processed = []
+                        for rec in data_list:
+                            processed.append({
+                                'id': f"GDAC_{rec.get('FLOAT', 'unknown')}_{rec.get('CYCLE', 'unknown')}",
+                                'lat': round(float(rec.get('LATITUDE', 0)), 3),
+                                'lon': round(float(rec.get('LONGITUDE', 0)), 3),
+                                'temperature': rec.get('TEMP'),
+                                'salinity': rec.get('PSAL'),
+                                'pressure': rec.get('PRES'),
+                                'oxygen': rec.get('DOXY'),
+                                'cycle': rec.get('CYCLE'),
+                                'time': str(rec.get('TIME', datetime.now())),
+                                'status': 'active'
+                            })
+                        samples.extend(processed)
+                        print(f" Fetched {len(processed)} real data points for {year}")
+                    except Exception as e:
+                        print(f"Failed to fetch real data for {year}: {e}")
+                        # Fallback to demo
+                        fallback_samples = self._generate_fallback_samples_for_year(year)
+                        samples.extend(fallback_samples)
+                except ImportError:
+                    print("argopy not available, falling back to demo data")
                     fallback_samples = self._generate_fallback_samples_for_year(year)
                     samples.extend(fallback_samples)
-                    continue
-
-                # Convert xarray to list format matching our data structure
-                for profile_idx in range(min(len(fetcher.coords['N_PROF']), 100)):  # Limit per year
-                    try:
-                        profile = fetcher.isel(N_PROF=profile_idx)
-
-                        # Extract essential data with robust handling
-                        try:
-                            if hasattr(profile, 'LATITUDE'):
-                                lat_values = profile.LATITUDE.values
-                                lat = float(lat_values.item() if lat_values.ndim > 0 else lat_values)
-                            else:
-                                lat = random.uniform(-90, 90)
-                        except:
-                            lat = random.uniform(-90, 90)
-
-                        try:
-                            if hasattr(profile, 'LONGITUDE'):
-                                lon_values = profile.LONGITUDE.values
-                                lon = float(lon_values.item() if lon_values.ndim > 0 else lon_values)
-                            else:
-                                lon = random.uniform(-180, 180)
-                        except:
-                            lon = random.uniform(-180, 180)
-
-                        try:
-                            if hasattr(profile, 'JULD'):
-                                juld_values = profile.JULD.values
-                                juld = juld_values.item() if juld_values.ndim > 0 else juld_values
-                                date = str(juld)
-                            else:
-                                date = f"{year}-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
-                        except:
-                            date = f"{year}-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
-
-                        # Extract measurements from xarray Dataset
-                        try:
-                            temp = float(profile['TEMP'].isel(N_LEVELS=0).values) if 'TEMP' in profile and len(profile['TEMP']) > 0 else random.uniform(5, 30)
-                        except:
-                            temp = random.uniform(5, 30)
-
-                        try:
-                            sal = float(profile['PSAL'].isel(N_LEVELS=0).values) if 'PSAL' in profile and len(profile['PSAL']) > 0 else random.uniform(33, 37)
-                        except:
-                            sal = random.uniform(33, 37)
-
-                        try:
-                            pres = float(profile['PRES'].isel(N_LEVELS=0).values) if 'PRES' in profile and len(profile['PRES']) > 0 else random.uniform(5, 2000)
-                        except:
-                            pres = random.uniform(5, 2000)
-
-                        try:
-                            oxy = float(profile['DOXY'].isel(N_LEVELS=0).values) if 'DOXY' in profile and len(profile['DOXY']) > 0 and random.random() > 0.5 else None
-                        except:
-                            oxy = None
-
-                        sample = {
-                            'id': f"WMO_{year}_GDAC_{profile_idx:04d}",
-                            'lat': round(lat, 3),
-                            'lon': round(lon, 3),
-                            'temperature': temp,
-                            'salinity': sal,
-                            'pressure': pres,
-                            'oxygen': oxy,
-                            'cycle': random.randint(1, 250),
-                            'time': date,
-                            'status': 'active' if random.random() > 0.2 else 'inactive',
-                            'data_source': 'gdac_erddap'
-                        }
-                        samples.append(sample)
-
-                    except Exception as e:
-                        print(f"Error processing profile {profile_idx} for {year}: {e}")
-                        continue
-
-                print(f"Successfully fetched {len([s for s in samples if s['time'].startswith(str(year))])} real profiles for year {year}")
-
-            except Exception as e:
-                print(f"Failed to fetch real data for {year}: {e}")
-                # Fallback to simulated data for this year
+            else:
                 fallback_samples = self._generate_fallback_samples_for_year(year)
                 samples.extend(fallback_samples)
 
         return samples
 
+    def _load_demo_data(self) -> List[Dict]:
+        """
+        Preload a fixed set of demo data for faster startup.
+        Loading from different chunks to spread locations globally.
+        """
+        years_to_load = [2005, 2007, 2010, 2012, 2017, 2019]  # From different chunks for global spread
+        all_data = []
+        for year in years_to_load:
+            try:
+                data = load_demo_data(year)
+                all_data.extend(data)
+            except FileNotFoundError:
+                pass
+        print(f"Preloaded {len(all_data)} demo data points from {len(years_to_load)} different time periods")
+        return all_data
+
     def _generate_fallback_samples_for_year(self, year: int) -> List[Dict]:
         """
-        Generate fallback synthetic data for a specific year when GDAC fetch fails.
+        Load demo data for a specific year when GDAC fetch fails.
         """
-        import random
-        from datetime import datetime, timedelta
-
-        samples = []
-        # Ocean regions with characteristic coordinates
-        ocean_regions = {
-            "Indian": [(30, 75), (20, 65), (35, 70)],
-            "Atlantic": [(25, -50), (35, -25), (30, -40)],
-            "Pacific": [(20, -160), (25, -170), (40, -120)],
-            "Southern": [(-55, -60), (-40, -20), (-50, -90)]
-        }
-
-        for region, coords in ocean_regions.items():
-            sample_count = random.randint(5, 10)
-
-            for _ in range(sample_count):
-                base_lat, base_lon = random.choice(coords)
-                lat = base_lat + random.uniform(-5, 5)
-                lon = base_lon + random.uniform(-10, 10)
-
-                # Generate oceanographic data
-                if region == "Indian":
-                    temp = random.uniform(20, 32)
-                    salinity = random.uniform(34.5, 36.5)
-                elif region == "Southern":
-                    temp = random.uniform(2, 8)
-                    salinity = random.uniform(33.5, 34.5)
-                elif region == "Atlantic":
-                    temp = random.uniform(15, 28)
-                    salinity = random.uniform(34.0, 36.0)
-                else:
-                    temp = random.uniform(18, 30)
-                    salinity = random.uniform(33.0, 35.0)
-
-                date = f"{year}-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
-
-                sample = {
-                    'id': f"WMO_{year}_{region[:3]}__FALLBACK_{random.randint(1000,9999)}",
-                    'lat': round(lat, 3),
-                    'lon': round(lon, 3),
-                    'temperature': round(temp, 1),
-                    'salinity': round(salinity, 1),
-                    'pressure': round(random.uniform(5, 2000), 1),
-                    'oxygen': None,
-                    'cycle': random.randint(1, 250),
-                    'time': date,
-                    'status': 'active' if random.random() > 0.2 else 'inactive',
-                    'data_source': 'fallback_simulated'
-                }
-                samples.append(sample)
-
-        print(f"Generated {len(samples)} fallback samples for year {year}")
-        return samples
+        try:
+            return load_demo_data(year)
+        except FileNotFoundError:
+            return []
 
     def _process_argovis_data(self, data: List) -> List[Dict]:
         """Process ArgoVis API data format."""
@@ -387,6 +312,76 @@ class ArgoDataService:
                 filtered.append(item)
 
         return filtered
+
+    def fetch_argo_data_via_api(self, region: str, start_year: int, end_year: int, max_depth: float, api_key: Optional[str] = None) -> List[Dict]:
+        """
+        Fetch ARGO data directly via API based on region, years, depth.
+        Adapts the provided Gemini-like API call to use ArgoVis API for real data.
+        """
+        print(f"Fetching ARGO data for {region}, years {start_year}-{end_year}, depth <{max_depth}m")
+
+        # Map region to lat/lon bounds
+        lat_lon_bounds = {
+            "Indian Ocean": {"lat_min": -60, "lat_max": 30, "lon_min": 0, "lon_max": 120},
+            "Atlantic Ocean": {"lat_min": -60, "lat_max": 70, "lon_min": -70, "lon_max": 40},
+            "Pacific Ocean": {"lat_min": -60, "lat_max": 60, "lon_min": 120, "lon_max": 289},  # 181 to -71 = 289
+            # Add more regions as needed
+        }
+
+        bounds = lat_lon_bounds.get(region, {"lat_min": -90, "lat_max": 90, "lon_min": -180, "lon_max": 180})
+
+        # Convert depth to pressure (approximate, 1 dbar ~ 1m)
+        max_pressure = max_depth
+
+        try:
+            # Use argopy to fetch real ARGO data from GDAC ERDDAP
+            from argopy import DataFetcher as ArgoDataFetcher
+            argo_fetcher = ArgoDataFetcher(src="erddap", parallel=True)
+
+            # Apply region filter
+            argo_fetcher = argo_fetcher.region([bounds['lon_min'], bounds['lat_min'], bounds['lon_max'], bounds['lat_max']])
+
+            # Apply date filter and fetch data
+            ds = argo_fetcher.float().to_xarray()
+            data_list = ds.to_dataframe().reset_index().to_dict('records')
+
+            processed_data = []
+            for rec in data_list:
+                try:
+                    lat = rec.get('LATITUDE')
+                    lon = rec.get('LONGITUDE')
+                    temp = rec.get('TEMP')
+                    sal = rec.get('PSAL')
+                    pres = rec.get('PRES')
+                    time_val = str(rec.get('TIME', ''))
+                    cycle = rec.get('CYCLE_NUMBER', 0)
+
+                    # Filter by year, since argopy may fetch more
+                    rec_year = pd.to_datetime(time_val).year if pd.notna(time_val) else None
+                    if rec_year and start_year <= rec_year <= end_year:
+                        # Filter by max pressure (depth)
+                        if pres is not None and isinstance(pres, (int, float)) and pres <= max_pressure:
+                            processed_data.append({
+                                'latitude': float(lat) if lat else None,
+                                'longitude': float(lon) if lon else None,
+                                'temperature': float(temp) if temp else None,
+                                'salinity': float(sal) if sal else None,
+                                'depth': float(pres) if pres else None,  # pressure in dbar ~ depth in meters
+                                'time': time_val,
+                                'cycle': int(cycle) if cycle else 0
+                            })
+                except Exception as e:
+                    continue
+
+            df = pd.DataFrame(processed_data)
+            df = df.dropna()  # Remove any rows with missing data
+            print(f"Fetched {len(df)} valid ARGO data points for {region} years {start_year}-{end_year} depth <{max_pressure}m")
+            return df.to_dict(orient='records')
+
+        except Exception as e:
+            print(f"Error fetching ARGO data via API: {e}")
+            return []
+
 
 # Global instance for use in routes
 argo_data_service = ArgoDataService()

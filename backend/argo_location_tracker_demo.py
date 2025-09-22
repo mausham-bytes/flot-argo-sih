@@ -38,9 +38,9 @@ def extract_location_from_csv(csv_path):
 @app.route('/argo/location', methods=['GET'])
 def get_argo_location():
     """
-    API endpoint to get Argo float location from CSV data.
+    API endpoint to get Argo float location from NetCDF file.
     """
-    location = extract_location_from_csv(CSV_FILE)
+    location = extract_location_from_netcdf(NETCDF_FILE)
     if location:
         return jsonify({"status": "success", "location": location})
     else:

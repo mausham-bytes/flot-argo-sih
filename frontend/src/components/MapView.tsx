@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Map, Layers, Search, Loader2, AlertCircle, Calendar } from 'lucide-react';
+import { Map, Layers, Search, Loader2, AlertCircle, Calendar, BarChart3 } from 'lucide-react';
 
 interface MapViewProps {
   selectedFloat: any;
   setSelectedFloat: (float: any) => void;
   theme: 'dark' | 'light';
+  mapPoints?: {lat: number, lon: number, salinity: number}[];
 }
 
 interface ArgoFloat {
@@ -19,7 +20,7 @@ interface ArgoFloat {
   status: string;
 }
 
-export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloat, theme }) => {
+export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloat, theme, mapPoints }) => {
   const [mapLayer, setMapLayer] = useState('ocean'); // Start with ocean view as default
   const [argoFloats, setArgoFloats] = useState<ArgoFloat[]>([]);
   const [filteredFloats, setFilteredFloats] = useState<ArgoFloat[]>([]);
@@ -29,9 +30,23 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
   const [startDate, setStartDate] = useState('2015-01-01');
   const [endDate, setEndDate] = useState('2024-12-31');
   const [showDateFilter, setShowDateFilter] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const toggleMapLayer = () => {
     setMapLayer(mapLayer === 'satellite' ? 'ocean' : 'satellite');
+  };
+
+  // Extract year and adjust date filters from search term
+  const extractDateFilterFromSearch = (term: string) => {
+    const yearMatch = term.match(/\b(20\d{2})\b/);
+    if (yearMatch) {
+      const year = yearMatch[1];
+      return {
+        startDate: `${year}-01-01`,
+        endDate: `${year}-12-31`
+      };
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -42,7 +57,7 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
         if (startDate !== '2015-01-01') params.set('start_date', startDate);
         if (endDate !== '2024-12-31') params.set('end_date', endDate);
 
-        const url = `http://127.0.0.1:5000/argo/locations${params.toString() ? '?' + params.toString() : ''}`;
+        const url = `/floats/locations${params.toString() ? '?' + params.toString() : ''}`;
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -66,8 +81,14 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
     fetchArgoFloats();
   }, [startDate, endDate]);
 
-  // Filter floats based on search term
+  // Filter floats based on search term and adjust date filters if year detected
   useEffect(() => {
+    const dateFilters = extractDateFilterFromSearch(searchTerm);
+    if (dateFilters) {
+      setStartDate(dateFilters.startDate);
+      setEndDate(dateFilters.endDate);
+    }
+
     if (!searchTerm.trim()) {
       setFilteredFloats(argoFloats);
     } else {
@@ -125,9 +146,16 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
             <Map className={`w-5 h-5 ${
               theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'
             }`} />
-            <h3 className={`font-medium text-sm md:text-base ${
-              theme === 'dark' ? 'text-white' : 'text-gray-900'
-            }`}>ARGO Float Network</h3>
+            <div>
+              <h3 className={`font-medium text-sm md:text-base ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>ARGO Float Network</h3>
+              {argoFloats.length > 0 && (
+                <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mt-0.5`}>
+                  Total: {argoFloats.length} floats ({argoFloats.filter(f => f.status === 'active').length} active, {argoFloats.filter(f => f.status === 'inactive').length} inactive)
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -144,6 +172,22 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
             >
               <Layers className="w-3 h-3" />
               <span>{mapLayer}</span>
+            </button>
+
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-200 text-xs md:text-sm ${
+                showStats
+                  ? theme === 'dark'
+                    ? 'bg-cyan-500 text-slate-900'
+                    : 'bg-blue-600 text-white'
+                  : theme === 'dark'
+                  ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white'
+                  : 'bg-gray-200/70 hover:bg-gray-300/70 text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <BarChart3 className="w-3 h-3" />
+              <span>Stats</span>
             </button>
 
             <button
@@ -210,6 +254,43 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
               >
                 Apply
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Panel */}
+      {showStats && (
+        <div className={`p-3 border-t ${
+          theme === 'dark' ? 'border-slate-700/50' : 'border-gray-200'
+        }`}>
+          <h4 className={`font-medium text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Float Status Summary
+          </h4>
+          <div className="mt-2 space-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className={`${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                Total Floats:
+              </span>
+              <span className={`font-semibold ${theme === 'dark' ? 'text-cyan-400' : 'text-blue-600'}`}>
+                {argoFloats.length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className={`${theme === 'dark' ? 'text-emerald-400' : 'text-green-600'}`}>
+                Active:
+              </span>
+              <span className={`font-semibold ${theme === 'dark' ? 'text-emerald-400' : 'text-green-600'}`}>
+                {argoFloats.filter(f => f.status === 'active').length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className={`${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`}>
+                Inactive:
+              </span>
+              <span className={`font-semibold ${theme === 'dark' ? 'text-orange-400' : 'text-orange-500'}`}>
+                {argoFloats.filter(f => f.status === 'inactive').length}
+              </span>
             </div>
           </div>
         </div>
@@ -314,7 +395,7 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
 
         {/* ARGO Float markers */}
         <div className="absolute inset-0">
-          {!loading && !error && filteredFloats.map((float) => (
+          {!loading && !error && filteredFloats.slice(0, 1000).map((float) => (
             <div
               key={float.id}
               className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
@@ -366,6 +447,20 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
                   </div>
                 </div>
               )}
+            </div>
+          ))}
+
+          {/* Query result salinity markers */}
+          {mapPoints && mapPoints.slice(0, 500).map((point, index) => (
+            <div
+              key={`query-${index}`}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${(point.lon + 180) / 360 * 100}%`,
+                top: `${(90 - point.lat) / 180 * 100}%`
+              }}
+            >
+              <div className="w-3 h-3 rounded-full bg-blue-600 border border-blue-400 opacity-80" />
             </div>
           ))}
         </div>
@@ -447,15 +542,16 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
           </div>
         )}
 
-        {/* Minimal Status display */}
-        {!loading && !error && searchTerm && (
+        {/* Status display with active/inactive counts */}
+        {!loading && !error && (searchTerm || filteredFloats.length !== argoFloats.length) && (
           <div className={`absolute top-12 right-2 backdrop-blur-sm border rounded px-2 py-1 ${
             theme === 'dark'
               ? 'bg-slate-900/60 border-slate-600 text-slate-300'
               : 'bg-white/80 border-gray-300 text-gray-700'
           }`}>
             <div className="text-xs">
-              {filteredFloats.length} found
+              {filteredFloats.length} found<br/>
+              {filteredFloats.filter(f => f.status === 'active').length} active, {filteredFloats.filter(f => f.status === 'inactive').length} inactive
             </div>
           </div>
         )}
@@ -501,6 +597,16 @@ export const MapView: React.FC<MapViewProps> = ({ selectedFloat, setSelectedFloa
                 theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
               }`}>Inactive</span>
             </div>
+            {mapPoints && (
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                }`}></div>
+                <span className={`${
+                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                }`}>Query</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

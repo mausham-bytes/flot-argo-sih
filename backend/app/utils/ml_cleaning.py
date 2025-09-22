@@ -18,12 +18,12 @@ def ml_clean_argo_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Keep relevant columns, but TIME might be dropped if already filtered
-    cols_to_keep = ["LONGITUDE", "LATITUDE", "PRES", "TEMP", "PSAL"]
-    if "TIME" in df.columns:
-        cols_to_keep.append("TIME")
+    cols_to_keep = ["lon", "lat", "pressure", "temperature", "salinity"]
+    if "time" in df.columns:
+        cols_to_keep.append("time")
     df = df[cols_to_keep]
 
-    numeric_cols = ["PRES", "TEMP", "PSAL"]
+    numeric_cols = ["pressure", "temperature", "salinity"]
 
     if sklearn_available:
         # 1️⃣ Handle missing values with KNN imputer
@@ -42,7 +42,7 @@ def ml_clean_argo_data(df: pd.DataFrame) -> pd.DataFrame:
         df_clean = df_clean.dropna()
 
     # 3️⃣ Optional: round numeric values for consistency
-    for col, decimals in [("TEMP", 2), ("PSAL", 2), ("PRES", 1)]:
+    for col, decimals in [("temperature", 2), ("salinity", 2), ("pressure", 1)]:
         df_clean[col] = df_clean[col].round(decimals)
 
     df_clean.reset_index(drop=True, inplace=True)

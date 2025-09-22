@@ -1,4 +1,4 @@
-import pytest
+from datetime import datetime
 from fastapi.testclient import TestClient
 from app.main import app  # Adjust import as needed
 
@@ -23,7 +23,7 @@ from app.models import FloatData
 def test_float_data_pydantic():
     data = FloatData(
         float_id="123",
-        date="2023-01-01T00:00:00",  # Will parse to datetime
+        date=datetime(2023, 1, 1),  # Datetime object
         latitude=10.0,
         longitude=20.0,
         depth=100.0,

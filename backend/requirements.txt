@@ -12,6 +12,8 @@ google-generativeai
 chromadb
 scikit-learn
 requests
+matplotlib
 fastapi
 uvicorn[standard]
 slowapi
+pytest

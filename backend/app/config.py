@@ -7,6 +7,9 @@ class Config:
     # SQLAlchemy PostgreSQL connection
     DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/argo_db")
 
+    # MongoDB connection
+    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/argo_db")
+
     # JWT Secret
     SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
     ALGORITHM = "HS256"

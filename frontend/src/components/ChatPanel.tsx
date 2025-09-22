@@ -207,15 +207,15 @@ interface Message {
 interface ChatPanelProps {
   messages: Message[];
   setMessages: (messages: Message[]) => void;
-  selectedFloat: any;
   compact?: boolean;
+  onQueryResult?: (result: any) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   messages,
   setMessages,
-  selectedFloat,
   compact = false,
+  onQueryResult,
 }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -270,6 +270,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
       const data = await response.json();
+
+      // Store the full response for visualization
+      if (onQueryResult) onQueryResult(data);
 
       const neridaResponse: Message = {
         id: messages.length + 2,

@@ -8,15 +8,12 @@ def build_response(result: dict) -> dict:
     - metadata: system info
     """
     return {
-        "text": result.get("text", ""),
-        "data": {
-            "records": result.get("cleaned_data", []),
-            "rows": result.get("rows", 0),
-        },
-        "plots": result.get("plots", []),
+        "text": result.get("summary", result.get("text", "")),
+        "data": result.get("data", {"records": [], "rows": 0}),
+        "plots": result.get("plot", result.get("plots", [])),
         "map": result.get("map", None),
-        "metadata": {
-            "source": "ARGO Conversational System (MVP)",
+        "metadata": result.get("metadata", {
+            "source": "Direct ARGO API System",
             "version": "0.1"
-        }
+        })
     }

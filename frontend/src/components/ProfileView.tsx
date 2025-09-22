@@ -19,10 +19,13 @@ import {
   PieChart,
   Pie,
   Cell,
+  ScatterChart,
+  Scatter,
 } from "recharts";
 
 interface ProfileViewProps {
   selectedFloat: any;
+  plotData?: { temperatures: number[], depths: number[], years: number[] };
 }
 
 interface ProfileDataPoint {
@@ -31,7 +34,7 @@ interface ProfileDataPoint {
   unit?: string;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat, plotData }) => {
   const [profileType, setProfileType] = useState("temperature");
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +46,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
       setError(null);
 
       try {
-        const response = await fetch(`http://127.0.0.1:5000/argo/profile/${parameter}`);
+        const response = await fetch(`/floats/profile/${parameter}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch: ${response.status}`);
         }
@@ -65,6 +68,44 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ selectedFloat }) => {
 
     fetchProfileData(profileType);
   }, [profileType]);
+
+  if (!plotData) {
+    // Show existing profile view logic
+  }
+  else
+  {
+    // Show temperature profile from query
+    const chartData = plotData.depths.map((depth, i) => ({
+      depth: depth,
+      temperature: plotData.temperatures[i],
+      year: plotData.years[i]
+    }));
+
+    return (
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden">
+        {/* Header */}
+        <div className="p-4 border-b border-slate-700/50">
+          <h3 className="font-semibold text-white">Temperature Profile (Query Result)</h3>
+        </div>
+
+        {/* Scatter Plot */}
+        <div className="p-4">
+          <ScatterChart width={700} height={400} data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+            <XAxis dataKey="temperature" stroke="#94a3b8" />
+            <YAxis dataKey="depth" stroke="#94a3b8" reversed />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+              labelStyle={{ color: '#f1f5f9' }}
+            />
+            <Legend />
+            <Scatter dataKey="temperature" fill="#ef4444" name="Temperature Profile" />
+          </ScatterChart>
+          <p className="text-xs text-slate-400 mt-2">Note: Each point represents an ARGO float measurement (Temperature vs Depth)</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && !profileData) {
     return (
